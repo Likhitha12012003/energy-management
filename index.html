@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Energy Monitoring System</title>
+    <link rel="stylesheet" href="style.css"> 
+    <script>
+        // Function to fetch and display device data
+        function refreshStatus() {
+            fetch('http://127.0.0.1:5000/status')
+                .then(response => response.json())
+                .then(data => {
+                    const devicesDiv = document.getElementById("devices");
+                    devicesDiv.innerHTML = ''; // Clear previous data
+
+                    // Loop through devices and display their status
+                    Object.keys(data.devices).forEach(device => {
+                        const deviceDiv = document.createElement('div');
+                        deviceDiv.innerHTML = `${device}: ${data.devices[device].status} (Usage: ${data.devices[device].usage}W)`;
+
+                        // Create toggle button for each device
+                        const toggleButton = document.createElement('button');
+                        toggleButton.textContent = data.devices[device].status === 'on' ? 'Turn Off' : 'Turn On';
+                        toggleButton.onclick = () => toggleDevice(device);
+                        deviceDiv.appendChild(toggleButton);
+
+                        devicesDiv.appendChild(deviceDiv);
+                    });
+
+                    // Display total usage and status
+                    document.getElementById("totalUsage").textContent = `Total Usage: ${data.total_usage}W`;
+                    document.getElementById("status").textContent = data.status;
+                })
+                .catch(error => console.error('Error fetching status:', error));
+        }
+
+        // Function to toggle device status
+        function toggleDevice(device) {
+            fetch('http://127.0.0.1:5000/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ device })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message); // Show the toggle result
+                refreshStatus(); // Refresh status after toggling
+            })
+            .catch(error => console.error('Error toggling device:', error));
+        }
+
+        // Automatically refresh status on page load
+        window.onload = refreshStatus;
+    </script>
+</head>
+<body>
+    <h1>Smart Energy Monitoring System</h1>
+    <div id="status">Loading status...</div>
+    <div id="totalUsage">Loading total usage...</div>
+    <div id="devices">Loading devices...</div>
+    <button onclick="refreshStatus()">Refresh Status</button>
+</body>
+</html>
